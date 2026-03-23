@@ -1,0 +1,19 @@
+{
+  "brand": "Hibou Project",
+  "login": {
+    "title": "Sign in",
+    "subtitle": "Enter your identifier and password to continue.",
+    "identifier": "Identifier",
+    "password": "Password",
+    "identifierPlaceholder": "Identifier",
+    "passwordPlaceholder": "••••••••",
+    "submit": "Sign in",
+    "errorInvalid": "Invalid identifier or password.",
+    "errorGeneric": "Something went wrong. Please try again."
+  },
+  "sidebar": {
+    "dashboard": "Dashboard",
+    "settings": "Settings",
+    "logout": "Log out"
+  }
+}

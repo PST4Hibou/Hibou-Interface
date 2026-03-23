@@ -1,0 +1,19 @@
+{
+  "brand": "Projet Hibou",
+  "login": {
+    "title": "Connexion",
+    "subtitle": "Saisissez votre identifiant et votre mot de passe pour continuer.",
+    "identifier": "Identifiant",
+    "password": "Mot de passe",
+    "identifierPlaceholder": "Identifiant",
+    "passwordPlaceholder": "••••••••",
+    "submit": "Se connecter",
+    "errorInvalid": "Identifiant ou mot de passe invalide.",
+    "errorGeneric": "Une erreur s'est produite. Veuillez réessayer."
+  },
+  "sidebar": {
+    "dashboard": "Tableau de bord",
+    "settings": "Paramètres",
+    "logout": "Se déconnecter"
+  }
+}
