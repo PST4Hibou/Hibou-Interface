@@ -1,5 +1,9 @@
 <script setup lang="ts">
+import { Toaster } from '@/components/ui/sonner'
+
 const { isDark } = useAppTheme()
+
+const toastTheme = computed(() => (isDark.value ? 'dark' : 'light'))
 
 useHead({
   meta: [
@@ -15,4 +19,5 @@ useHead({
   <NuxtLayout>
     <NuxtPage />
   </NuxtLayout>
+  <Toaster :theme="toastTheme" />
 </template>

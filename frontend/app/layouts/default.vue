@@ -11,7 +11,7 @@ import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
     }"
   >
     <AppSidebar variant="inset" />
-    <SidebarInset>
+    <SidebarInset class="min-h-0">
       <slot />
     </SidebarInset>
   </SidebarProvider>

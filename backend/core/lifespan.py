@@ -1,13 +1,9 @@
 import asyncio
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
-from starlette.datastructures import State
-import zmq
-import zmq.asyncio
-import json
 
 from core.config import get_settings
-from core.db import create_engine_and_session_factory
+from core.db import create_engine_and_session_factory, sqlite_add_missing_columns
 from models import Base
 from services.ipc_forwarder.zeromq import ZMQForwarder
 
@@ -20,6 +16,7 @@ async def lifespan(app: FastAPI):
 
     async with engine.begin() as connection:
         await connection.run_sync(Base.metadata.create_all)
+        await connection.run_sync(sqlite_add_missing_columns)
 
     """
     Start ZeroMQ sockets forwarder

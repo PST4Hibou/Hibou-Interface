@@ -1,5 +1,5 @@
-import { useApi } from '~/composables/useApi'
-import type { AccessTokenResponse, TokenResponse, User } from '~/types/auth'
+import { useAuthRepository } from '~/repositories/auth.repository'
+import type { User } from '~/types/auth'
 
 export const useUserStore = defineStore('user', {
   state: () => ({
@@ -14,21 +14,16 @@ export const useUserStore = defineStore('user', {
 
   actions: {
     async login(identifier: string, password: string) {
-      const { apiFetch } = useApi()
-      const body = await apiFetch<TokenResponse>('/auth/login', {
-        method: 'POST',
-        body: { identifier, password },
-      })
+      const auth = useAuthRepository()
+      const body = await auth.login(identifier, password)
       this.accessToken = body.access_token
       this.user = body.user
     },
 
     async refreshAccessToken() {
-      const { apiFetch } = useApi()
+      const auth = useAuthRepository()
       try {
-        const body = await apiFetch<AccessTokenResponse>('/auth/refresh', {
-          method: 'POST',
-        })
+        const body = await auth.refreshAccessToken()
         this.accessToken = body.access_token
       } catch {
         this.accessToken = null
@@ -38,9 +33,9 @@ export const useUserStore = defineStore('user', {
 
     async fetchMe() {
       if (!this.accessToken) return
-      const { authenticatedFetch } = useApi()
+      const auth = useAuthRepository()
       try {
-        this.user = await authenticatedFetch<User>('/auth/me', { method: 'GET' })
+        this.user = await auth.fetchMe()
       } catch {
         this.user = null
         this.accessToken = null
@@ -48,9 +43,9 @@ export const useUserStore = defineStore('user', {
     },
 
     async logout() {
-      const { apiFetch } = useApi()
+      const auth = useAuthRepository()
       try {
-        await apiFetch('/auth/logout', { method: 'POST' })
+        await auth.logout()
       } finally {
         this.user = null
         this.accessToken = null

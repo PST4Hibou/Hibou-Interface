@@ -100,7 +100,7 @@ import {
   SidebarGroup,
   SidebarGroupContent,
 } from '@/components/ui/sidebar'
-import { useUserStore } from '../stores/user'
+import { useUserStore } from '~/stores/user'
 
 withDefaults(
   defineProps<{

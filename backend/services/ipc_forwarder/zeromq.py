@@ -13,7 +13,6 @@ class ZMQForwarder:
         context = zmq.asyncio.Context()
         settings = get_settings()
 
-        self.pub_socket = None
         pub_socket = context.socket(zmq.PUB)
         pub_socket.connect(settings.zmq_pub_string)
         self.pub = pub_socket

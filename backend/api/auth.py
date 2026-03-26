@@ -65,7 +65,6 @@ async def login(payload: LoginRequest, db: AsyncSession = Depends(get_db)) -> JS
     )
     response = JSONResponse(content=body.model_dump(mode="json"))
     attach_refresh_cookie(response, refresh_token)
-    print("attached refresh cookie")
     return response
 
 

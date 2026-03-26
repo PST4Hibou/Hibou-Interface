@@ -15,7 +15,43 @@
     "toggle": "Basculer le thème clair ou sombre"
   },
   "settings": {
-    "title": "Paramètres"
+    "title": "Paramètres",
+    "tabs": {
+      "system": "Paramètres système",
+      "users": "Utilisateurs"
+    },
+    "users": {
+      "description": "Tous les comptes enregistrés. Affichage uniquement.",
+      "columnId": "ID",
+      "columnIdentifier": "Identifiant",
+      "columnCreatedAt": "Inscription",
+      "empty": "Aucun utilisateur pour le moment."
+    },
+    "system": {
+      "gpsTitle": "Localisation système (position GPS)",
+      "latitude": "Latitude",
+      "longitude": "Longitude",
+      "latitudePlaceholder": "Degrés décimaux",
+      "longitudePlaceholder": "Degrés décimaux",
+      "angleFromLongitude": "Angle par rapport à la longitude",
+      "anglePlaceholder": "Degrés"
+    },
+    "map": {
+      "title": "Paramètres de la carte",
+      "zoomLabel": "Zoom",
+      "zoomPlaceholder": "10"
+    },
+    "save": "Enregistrer",
+    "saving": "Enregistrement…",
+    "saved": "Enregistré.",
+    "loadError": "Impossible de charger les paramètres.",
+    "saveError": "Impossible d'enregistrer les paramètres.",
+    "invalidNumber": "Saisissez des nombres valides ou laissez les champs vides."
+  },
+  "dashboard": {
+    "videoTitle": "Flux vidéo",
+    "videoPlaceholder": "Aucun flux pour le moment.",
+    "mapMissingToken": "Définissez NUXT_PUBLIC_MAPBOX_ACCESS_TOKEN pour afficher la carte."
   },
   "sidebar": {
     "dashboard": "Tableau de bord",

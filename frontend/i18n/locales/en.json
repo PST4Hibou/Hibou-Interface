@@ -15,7 +15,43 @@
     "toggle": "Toggle light and dark theme"
   },
   "settings": {
-    "title": "Settings"
+    "title": "Settings",
+    "tabs": {
+      "system": "System settings",
+      "users": "Users"
+    },
+    "users": {
+      "description": "All registered accounts. This view is read-only.",
+      "columnId": "ID",
+      "columnIdentifier": "Identifier",
+      "columnCreatedAt": "Registered",
+      "empty": "No users yet."
+    },
+    "system": {
+      "gpsTitle": "System localisation (GPS pos)",
+      "latitude": "Latitude",
+      "longitude": "Longitude",
+      "latitudePlaceholder": "Decimal degrees",
+      "longitudePlaceholder": "Decimal degrees",
+      "angleFromLongitude": "Angle from longitude",
+      "anglePlaceholder": "Degrees"
+    },
+    "map": {
+      "title": "Map settings",
+      "zoomLabel": "Zoom",
+      "zoomPlaceholder": "10"
+    },
+    "save": "Save",
+    "saving": "Saving…",
+    "saved": "Saved.",
+    "loadError": "Could not load settings.",
+    "saveError": "Could not save settings.",
+    "invalidNumber": "Use valid numbers or leave fields empty."
+  },
+  "dashboard": {
+    "videoTitle": "Video feed",
+    "videoPlaceholder": "No stream connected.",
+    "mapMissingToken": "Set NUXT_PUBLIC_MAPBOX_ACCESS_TOKEN to show the map."
   },
   "sidebar": {
     "dashboard": "Dashboard",
