@@ -30,7 +30,15 @@ async def get_system_settings(
 ) -> SystemSettingsRead:
     row = await _get_singleton_row(db)
     if row is None:
-        return SystemSettingsRead(latitude=None, longitude=None, angle_from_longitude=None, map_zoom=None)
+        return SystemSettingsRead(
+            latitude=None,
+            longitude=None,
+            angle_from_longitude=None,
+            map_zoom=None,
+            map_pitch=None,
+            map_3d_buildings=None,
+            mapbox_style=None,
+        )
     return SystemSettingsRead.model_validate(row)
 
 
@@ -47,6 +55,9 @@ async def put_system_settings(
             longitude=payload.longitude,
             angle_from_longitude=payload.angle_from_longitude,
             map_zoom=payload.map_zoom,
+            map_pitch=payload.map_pitch,
+            map_3d_buildings=payload.map_3d_buildings,
+            mapbox_style=payload.mapbox_style,
         )
         db.add(row)
     else:
@@ -54,6 +65,9 @@ async def put_system_settings(
         row.longitude = payload.longitude
         row.angle_from_longitude = payload.angle_from_longitude
         row.map_zoom = payload.map_zoom
+        row.map_pitch = payload.map_pitch
+        row.map_3d_buildings = payload.map_3d_buildings
+        row.mapbox_style = payload.mapbox_style
     await db.commit()
     await db.refresh(row)
     return SystemSettingsRead.model_validate(row)

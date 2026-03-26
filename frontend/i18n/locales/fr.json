@@ -38,8 +38,24 @@
     },
     "map": {
       "title": "Paramètres de la carte",
+      "styleLabel": "Style de carte (Mapbox)",
+      "stylePlaceholder": "Choisir un style de carte",
       "zoomLabel": "Zoom",
-      "zoomPlaceholder": "10"
+      "zoomPlaceholder": "10",
+      "pitchLabel": "Inclinaison (pitch)",
+      "pitchPlaceholder": "0–85°",
+      "buildings3dLabel": "Bâtiments 3D (empreintes extrudées)",
+      "styleOptions": {
+        "standard": "Standard (3D)",
+        "streets": "Rues",
+        "outdoors": "Plein air",
+        "light": "Clair",
+        "dark": "Sombre / nuit",
+        "satellite": "Satellite",
+        "satellite-streets": "Satellite + rues",
+        "navigation-day": "Navigation (jour)",
+        "navigation-night": "Navigation (nuit)"
+      }
     },
     "save": "Enregistrer",
     "saving": "Enregistrement…",

@@ -77,6 +77,30 @@
             {{ $t('settings.map.title') }}
           </h3>
           <div class="grid gap-4 sm:grid-cols-3">
+            <FormField v-slot="{ componentField }" name="mapboxStyle">
+              <FormItem>
+                <FormLabel>
+                  {{ $t('settings.map.styleLabel') }}
+                </FormLabel>
+                <Select v-bind="componentField" :disabled="isLoading">
+                  <FormControl>
+                    <SelectTrigger class="w-full">
+                      <SelectValue :placeholder="$t('settings.map.stylePlaceholder')" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem
+                      v-for="id in MAPBOX_STYLE_IDS"
+                      :key="id"
+                      :value="id"
+                    >
+                      {{ $t(`settings.map.styleOptions.${id}`) }}
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            </FormField>
             <FormField v-slot="{ componentField }" name="mapZoom">
               <FormItem>
                 <FormLabel>
@@ -94,6 +118,41 @@
                 <FormMessage />
               </FormItem>
             </FormField>
+            <FormField v-slot="{ componentField }" name="mapPitch">
+              <FormItem>
+                <FormLabel>
+                  {{ $t('settings.map.pitchLabel') }}
+                </FormLabel>
+                <FormControl>
+                  <Input
+                    v-bind="componentField"
+                    type="number"
+                    step="any"
+                    inputmode="decimal"
+                    autocomplete="off"
+                    :disabled="isLoading"
+                    :placeholder="$t('settings.map.pitchPlaceholder')"
+                    class="font-mono tabular-nums"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            </FormField>
+            <FormField v-slot="{ value, handleChange }" name="map3dBuildings">
+              <FormItem class="flex flex-row items-center gap-3 space-y-0 sm:col-span-3">
+                <FormControl>
+                  <Checkbox
+                    :model-value="value"
+                    :disabled="isLoading"
+                    @update:model-value="(v) => handleChange(v === true)"
+                  />
+                </FormControl>
+                <FormLabel class="cursor-pointer font-normal !mt-0">
+                  {{ $t('settings.map.buildings3dLabel') }}
+                </FormLabel>
+                <FormMessage />
+              </FormItem>
+            </FormField>
           </div>
         </section>
         <Button type="submit" :disabled="isLoading">
@@ -107,11 +166,20 @@
 <script setup lang="ts">
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { useForm } from 'vee-validate'
 import { toTypedSchema } from '@vee-validate/zod'
 import * as z from 'zod'
 import { toast } from 'vue-sonner'
+import { MAPBOX_STYLE_IDS, isMapboxStyleId } from '~/lib/mapboxStyles'
 import { useSettingsRepository } from '~/repositories/settings.repository'
 import type { SystemSettings } from '~/types/settings'
 
@@ -127,7 +195,10 @@ const systemFormSchema = z.object({
   latitude: z.preprocess(toFiniteOrZero, z.number().min(-90).max(90)),
   longitude: z.preprocess(toFiniteOrZero, z.number().min(-180).max(180)),
   angleFromLongitude: z.preprocess(toFiniteOrZero, z.number().min(0).max(360)),
+  mapboxStyle: z.enum(MAPBOX_STYLE_IDS),
   mapZoom: z.number().min(0).max(100),
+  mapPitch: z.preprocess(toFiniteOrZero, z.number().min(0).max(85)),
+  map3dBuildings: z.boolean(),
 })
 
 const schema = toTypedSchema(systemFormSchema)
@@ -138,7 +209,10 @@ const { handleSubmit, resetForm } = useForm({
     latitude: 0,
     longitude: 0,
     angleFromLongitude: 0,
+    mapboxStyle: 'satellite',
     mapZoom: 0,
+    mapPitch: 0,
+    map3dBuildings: false,
   },
 })
 
@@ -146,15 +220,22 @@ const DEFAULT_FORM = {
   latitude: 0,
   longitude: 0,
   angleFromLongitude: 0,
+  mapboxStyle: 'satellite',
   mapZoom: 10,
+  mapPitch: 0,
+  map3dBuildings: false,
 } as const
 
 function systemToFormValues(data: SystemSettings) {
+  const styleId = data.mapbox_style
   return {
     latitude: toFiniteOrZero(data.latitude),
     longitude: toFiniteOrZero(data.longitude),
     angleFromLongitude: toFiniteOrZero(data.angle_from_longitude),
+    mapboxStyle: styleId && isMapboxStyleId(styleId) ? styleId : 'satellite',
     mapZoom: toFiniteOrZero(data.map_zoom),
+    mapPitch: toFiniteOrZero(data.map_pitch),
+    map3dBuildings: data.map_3d_buildings === true,
   }
 }
 
@@ -180,8 +261,12 @@ const onSubmit = handleSubmit(async (values) => {
       longitude: values.longitude,
       angle_from_longitude: values.angleFromLongitude,
       map_zoom: values.mapZoom,
+      map_pitch: values.mapPitch,
+      map_3d_buildings: values.map3dBuildings,
+      mapbox_style: values.mapboxStyle,
     })
     resetForm({ values: systemToFormValues(data) })
+    await refreshNuxtData('settings-users')
     toast.success(t('settings.saved'))
   } catch {
     toast.error(t('settings.saveError'))

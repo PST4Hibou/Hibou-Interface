@@ -38,8 +38,24 @@
     },
     "map": {
       "title": "Map settings",
+      "styleLabel": "Map style (Mapbox)",
+      "stylePlaceholder": "Choose a map style",
       "zoomLabel": "Zoom",
-      "zoomPlaceholder": "10"
+      "zoomPlaceholder": "10",
+      "pitchLabel": "Pitch (tilt)",
+      "pitchPlaceholder": "0–85°",
+      "buildings3dLabel": "3D buildings (extruded footprints)",
+      "styleOptions": {
+        "standard": "Standard (3D)",
+        "streets": "Streets",
+        "outdoors": "Outdoors",
+        "light": "Light",
+        "dark": "Dark / night",
+        "satellite": "Satellite",
+        "satellite-streets": "Satellite + streets",
+        "navigation-day": "Navigation (day)",
+        "navigation-night": "Navigation (night)"
+      }
     },
     "save": "Save",
     "saving": "Saving…",
