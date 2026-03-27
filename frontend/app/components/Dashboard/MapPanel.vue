@@ -42,11 +42,6 @@ const { data: settings, pending: isLoading } = await useAsyncData<SystemSettings
 )
 
 const angle = ref(90)
-onMounted(() => {
-  setInterval(() => {
-    angle.value = (angle.value + 1) % 360
-  }, 1000)
-})
 
 const droneAngle = ref(10)
 onMounted(() => {
@@ -67,4 +62,16 @@ const refreshMap = () => {
   if (!hasToken.value || isLoading.value || !settings.value) return
   syncFromSettings()
 }
+
+const { addSubscriber } = useIPC()
+addSubscriber((event) => {
+  let data = event.data.split(' ')[1]
+  if (!data) return
+
+  let [azimuth, elevation] = data.split(',')
+  azimuth = parseFloat(azimuth) / 10
+  // elevation = parseFloat(elevation) / 10
+  angle.value = azimuth
+}, 'vision_angle')
+console.log()
 </script>

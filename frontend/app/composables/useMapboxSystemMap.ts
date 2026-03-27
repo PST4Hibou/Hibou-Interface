@@ -1,7 +1,6 @@
 import mapboxgl from 'mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
 import { useResizeObserver } from '@vueuse/core'
-import type { Ref } from 'vue'
 import { mapStyleUrl } from '~/lib/mapboxStyles'
 import type { SystemSettings } from '~/types/settings'
 

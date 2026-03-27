@@ -36,11 +36,11 @@
             </CardContent>
           </Card>
         </div>
-        <Card class="mt-4 w-xl p-4">
-          <h2 class="mb-2 text-lg font-semibold">Test event</h2>
-          <Input v-model="event" type="text" placeholder="Test event" />
-          <Button class="mt-2" :disabled="!ws" @click="ws?.send(event)">Send</Button>
-        </Card>
+<!--        <Card class="mt-4 w-xl p-4">-->
+<!--          <h2 class="mb-2 text-lg font-semibold">Test event</h2>-->
+<!--          <Input v-model="event" type="text" placeholder="Test event" />-->
+<!--          <Button class="mt-2" :disabled="!ws" @click="ws?.send(event)">Send</Button>-->
+<!--        </Card>-->
       </div>
     </div>
   </div>
@@ -49,17 +49,9 @@
 <script setup lang="ts">
 import { ExternalLink } from 'lucide-vue-next'
 
-/** Same path as the FastAPI WebSocket route (`/events` router + `/ws`). */
-const EVENTS_WS_PATH = '/events/ws'
-
 definePageMeta({
   middleware: ['auth'],
 })
-
-const config = useRuntimeConfig()
-
-const event = ref('')
-
 const systemStatus = ref([
   {
     name: 'PTZ Camera',
@@ -79,27 +71,4 @@ const systemStatus = ref([
     status: true,
   },
 ])
-
-function eventsWebSocketUrl(apiBase: string, wsPath: string): string {
-  const u = new URL(apiBase)
-  u.protocol = u.protocol === 'https:' ? 'wss:' : 'ws:'
-  u.pathname = wsPath
-  u.search = ''
-  u.hash = ''
-  return u.toString()
-}
-
-const ws = shallowRef<WebSocket | null>(null)
-
-onMounted(() => {
-  const socket = new WebSocket(eventsWebSocketUrl(config.public.apiBase as string, EVENTS_WS_PATH))
-  socket.onmessage = (e) => {
-    // console.log(e)
-  }
-  ws.value = socket
-})
-
-onBeforeUnmount(() => {
-  ws.value?.close()
-})
 </script>
