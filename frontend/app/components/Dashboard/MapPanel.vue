@@ -41,8 +41,11 @@ const { data: settings, pending: isLoading } = await useAsyncData<SystemSettings
   () => settingsRepo.getSystem()
 )
 
-const angle = ref(90)
+const defaultAngleComputer = 120
+const defaultAngleDrone = 140
+const angle = ref(0)
 const droneAngle = ref<number | null>(null)
+const hasDetections = ref(false)
 
 const { syncFromSettings } = useMapboxSystemMap(mapContainer, {
   accessToken,
@@ -50,6 +53,7 @@ const { syncFromSettings } = useMapboxSystemMap(mapContainer, {
   settings,
   bearingDeg: angle,
   droneBearingDeg: droneAngle,
+  hasDetections,
 })
 
 const refreshMap = () => {
@@ -65,15 +69,25 @@ addSubscriber((event) => {
   const [azimuthRaw = ''] = data.split(',')
   const azimuth = parseFloat(azimuthRaw) / 10
   if (Number.isNaN(azimuth)) return
-  angle.value = azimuth
+  angle.value = azimuth + defaultAngleComputer
 }, 'vision_angle')
 addSubscriber((event) => {
   const data = event.data.split(' ')[1]
   if (!data) return
+  return
   const [azimuthRaw = ''] = data.split(',')
   if (azimuthRaw === 'None') droneAngle.value = null
   const azimuth = parseFloat(azimuthRaw)
   if (Number.isNaN(azimuth)) return
-  droneAngle.value = azimuth
+  droneAngle.value = -azimuth + defaultAngleDrone
+  console.log(droneAngle.value)
 }, 'decision_angle')
+addSubscriber((event) => {
+  const detections = event.data.split(',').map(Number)
+  if (detections.some(Boolean)) {
+    hasDetections.value = true
+  } else {
+    hasDetections.value = false
+  }
+}, 'acoustic_detection')
 </script>

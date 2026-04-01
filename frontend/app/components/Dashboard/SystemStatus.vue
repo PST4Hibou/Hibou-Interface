@@ -39,6 +39,22 @@
             </div>
           </CardContent>
         </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle class="flex justify-between"> Acoustic Detections </CardTitle>
+          </CardHeader>
+          <CardContent class="grid grid-cols-4 gap-2">
+            <div v-for="(detection, index) in acousticDetectionsDemo" :key="index">
+              <div class="flex items-center gap-2">
+                <span>Mic {{ index + 1 }}</span>
+                <div
+                  class="size-2 rounded-full"
+                  :class="detection ? 'bg-green-500' : 'bg-red-500'"
+                ></div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   </div>
@@ -154,6 +170,13 @@ function applySystemStatusPayload(payload: string) {
   }
 }
 
+const isDemo = 4
+const acousticDetections = ref<number[]>([1, 1, 0, 0])
+const acousticDetectionsDemo = computed(() => {
+  if (isDemo) return [0, 0, 0, 0]
+  return acousticDetections.value
+})
+
 const { addSubscriber } = useIPC()
 
 addSubscriber((event) => {
@@ -162,6 +185,11 @@ addSubscriber((event) => {
   if (!payload) return
   applySystemStatusPayload(payload)
 }, 'system_status')
+
+addSubscriber((event) => {
+  const detections = event.data.split(',').map(Number)
+  acousticDetections.value = detections
+}, 'acoustic_detections')
 
 onUnmounted(() => {
   for (const t of statusResetTimers.values()) clearTimeout(t)

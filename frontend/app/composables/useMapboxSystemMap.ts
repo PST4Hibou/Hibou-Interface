@@ -163,9 +163,10 @@ export function useMapboxSystemMap(
     bearingDeg: Ref<number>
     /** Drone heading: spoke + filled cone (sector) from center along this bearing. */
     droneBearingDeg: Ref<number | null>
+    hasDetections: Ref<boolean>
   }
 ) {
-  const { accessToken, enabled, settings, bearingDeg, droneBearingDeg } = options
+  const { accessToken, enabled, settings, bearingDeg, droneBearingDeg, hasDetections } = options
   const mapInstance = shallowRef<mapboxgl.Map | null>(null)
   /** Tracks applied style so `setStyle` only runs when the URL changes. */
   const lastAppliedStyleUrl = ref<string | null>(null)
@@ -230,7 +231,7 @@ export function useMapboxSystemMap(
         source: BEARING_LINE_SOURCE_ID,
         layout: { 'line-cap': 'round', 'line-join': 'round' },
         paint: {
-          'line-color': '#ffffff',
+          'line-color': '#000000',
           'line-width': 3,
           'line-opacity': 0.92,
         },
@@ -264,7 +265,12 @@ export function useMapboxSystemMap(
         source: CENTER_SOURCE_ID,
         paint: {
           'circle-radius': 10,
-          'circle-color': '#f43f5e',
+          'circle-color': [
+            'case',
+            ['boolean', ['get', 'hasDetections'], false],
+            '#ef4444',
+            '#000000',
+          ],
           'circle-opacity': 0.92,
           'circle-stroke-width': 2,
           'circle-stroke-color': '#ffffff',
@@ -279,7 +285,7 @@ export function useMapboxSystemMap(
     src.setData({
       type: 'Feature',
       geometry: { type: 'Point', coordinates: [lng, lat] },
-      properties: {},
+      properties: { hasDetections: hasDetections.value },
     })
   }
 
@@ -370,13 +376,13 @@ export function useMapboxSystemMap(
       return
     }
     const b = droneBearingDeg.value
-    if (!b) {
+    if (b === null) {
       clearDroneLineData(map)
       clearDroneConeData(map)
-      return
+    } else {
+      setDroneCone(map, v.lng, v.lat, b)
+      setDroneLine(map, v.lng, v.lat, b)
     }
-    setDroneCone(map, v.lng, v.lat, b)
-    setDroneLine(map, v.lng, v.lat, b)
   }
 
   function sync3dBuildingsLayer() {
@@ -467,6 +473,7 @@ export function useMapboxSystemMap(
   watch([settings, mapInstance], syncFromSettings, { immediate: true })
   watch(bearingDeg, syncBearingLine)
   watch(droneBearingDeg, syncDroneOverlays)
+  watch(hasDetections, syncCenterCircle)
 
   return { syncFromSettings }
 }
