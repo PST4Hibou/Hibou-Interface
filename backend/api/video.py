@@ -1,59 +1,43 @@
-import asyncio
-from collections.abc import AsyncIterator
-from typing import Annotated, Literal
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
-from fastapi.responses import StreamingResponse
+from fastapi import WebSocket, WebSocketDisconnect
 
-from core.dependencies import get_current_user_media
-from models import User
-from services.vision_stream.ingest import VisionMjpegSource
+from fastapi import APIRouter
 
 router = APIRouter()
 
-_MJPEG_HDR = b"--ffmpeg\r\nContent-Type: image/jpeg\r\n\r\n"
+class VisionConnectionManager:
+    def __init__(self):
+        self.clients: list[WebSocket] = []
 
+    async def connect(self, ws: WebSocket):
+        await ws.accept()
+        print(f"[vision] client connected: {ws.client.host}")
+        self.clients.append(ws)
 
-@router.get(
-    "/ptz/mjpeg",
-    summary="Live camera (ZMQ vision frames as MJPEG for browsers)",
-)
-async def ptz_mjpeg_stream(
-    request: Request,
-    channel: Annotated[
-        Literal["raw", "annotated"],
-        Query(description="ZMQ stream: raw or annotated publisher"),
-    ] = "annotated",
-    _user: User = Depends(get_current_user_media),
-) -> StreamingResponse:
-    raw_src = request.app.state.vision_mjpeg_raw
-    ann_src = request.app.state.vision_mjpeg_annotated
-    src: VisionMjpegSource = raw_src if channel == "raw" else ann_src
+        while True:
+            try:
+                data = await ws.receive_text()
+            except WebSocketDisconnect:
+                self.disconnect(ws)
+                break
 
-    try:
-        await asyncio.wait_for(src.first_frame.wait(), timeout=5.0)
-    except TimeoutError:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail=(
-                "Error fetching video stream"
-            ),
-        ) from None
+    def disconnect(self, ws: WebSocket):
+        self.clients.remove(ws)
 
-    async def generate() -> AsyncIterator[bytes]:
-        seen_gen = -1
-        try:
-            while True:
-                jpeg, seen_gen = await src.wait_next_jpeg(seen_gen)
-                yield _MJPEG_HDR + jpeg + b"\r\n"
-        except asyncio.CancelledError:
-            raise
+    async def broadcast(self, frame: bytes):
+        for client in self.clients:
+            try:
+                print(f"[vision] sending frame to client: {len(frame)}")
+                await client.send_bytes(frame)
+            except WebSocketDisconnect:
+                self.disconnect(client)
+                break
+            except Exception as e:
+                print(f"[vision] error: {e}")
+                pass
 
-    return StreamingResponse(
-        generate(),
-        media_type="multipart/x-mixed-replace;boundary=ffmpeg",
-        headers={
-            "Cache-Control": "no-store, no-cache, must-revalidate",
-            "Pragma": "no-cache",
-        },
-    )
+websocket_vision_manager = VisionConnectionManager()
+
+@router.websocket("/stream-ws")
+async def websocket_endpoint(ws: WebSocket):
+    await websocket_vision_manager.connect(ws)

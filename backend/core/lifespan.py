@@ -6,7 +6,7 @@ from core.config import get_settings
 from core.db import create_engine_and_session_factory, sqlite_add_missing_columns
 from models import Base
 from services.ipc_forwarder.zeromq import ZMQForwarder
-from services.vision_stream import VisionMjpegSource, run_vision_zmq_ingest
+from services.vision_stream.vision_forwarder import ZMQVisionForwarder
 
 
 @asynccontextmanager
@@ -23,37 +23,17 @@ async def lifespan(app: FastAPI):
     """
     Start ZeroMQ sockets forwarder and vision video ingest (MJPEG sources).
     """
-    app.state.vision_mjpeg_raw = VisionMjpegSource()
-    app.state.vision_mjpeg_annotated = VisionMjpegSource()
-    vision_stop = asyncio.Event()
-    broadcast_task = asyncio.create_task(ZMQForwarder().forwarder())
-    vision_tasks = [
-        asyncio.create_task(
-            run_vision_zmq_ingest(
-                settings.vision_zmq_raw,
-                app.state.vision_mjpeg_raw,
-                vision_stop,
-            )
-        ),
-        asyncio.create_task(
-            run_vision_zmq_ingest(
-                settings.vision_zmq_annotated,
-                app.state.vision_mjpeg_annotated,
-                vision_stop,
-            )
-        ),
-    ]
+    ipc_forwarder_task = asyncio.create_task(ZMQForwarder().forwarder())
+    vision_forwarder_task = asyncio.create_task(ZMQVisionForwarder().forwarder())
 
     try:
         yield
     finally:
-        vision_stop.set()
-        broadcast_task.cancel()
-        for vt in vision_tasks:
-            vt.cancel()
+        ipc_forwarder_task.cancel()
+        vision_forwarder_task.cancel()
         await asyncio.gather(
-            broadcast_task,
-            *vision_tasks,
+            ipc_forwarder_task,
+            vision_forwarder_task,
             return_exceptions=True,
         )
         await engine.dispose()

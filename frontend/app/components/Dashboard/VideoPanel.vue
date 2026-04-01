@@ -3,9 +3,8 @@
     class="relative flex h-full min-h-0 w-full flex-col overflow-hidden rounded-lg border border-border bg-black/80"
   >
     <img
-      v-show="mjpegSrc && !streamError"
-      :key="mjpegKey"
-      :src="mjpegSrc ?? undefined"
+      v-show="frameSrc && !streamError"
+      :src="frameSrc ?? undefined"
       class="h-full w-full object-contain"
       alt=""
       referrerpolicy="no-referrer"
@@ -13,14 +12,14 @@
       @load="streamError = false"
     />
     <div
-      v-if="!mjpegSrc || streamError"
+      v-if="!frameSrc || streamError"
       class="absolute inset-0 flex flex-col items-center justify-center bg-muted/30 p-6 text-center"
     >
       <p class="text-sm font-medium text-foreground">
         {{ $t('dashboard.videoTitle') }}
       </p>
       <p class="mt-1 max-w-sm text-sm text-muted-foreground">
-        <template v-if="!mjpegSrc">
+        <template v-if="!frameSrc">
           {{ $t('dashboard.videoNeedToken') }}
         </template>
         <template v-else>
@@ -32,22 +31,50 @@
 </template>
 
 <script setup lang="ts">
-const userStore = useUserStore()
+import { useWebSocket } from '@vueuse/core'
+
 const config = useRuntimeConfig()
 
+const frameSrc = ref<string | null>(null)
 const streamError = ref(false)
+let frameObjectUrl: string | null = null
 
-const mjpegSrc = computed(() => {
-  const token = userStore.accessToken
-  if (!token) return null
-  const base = String(config.public.apiBase ?? '').replace(/\/$/, '')
-  return `${base}/video/ptz/mjpeg?token=${encodeURIComponent(token)}&channel=raw`
+function setFrameFromBlob(blob: Blob) {
+  if (frameObjectUrl) {
+    URL.revokeObjectURL(frameObjectUrl)
+    frameObjectUrl = null
+  }
+  frameObjectUrl = URL.createObjectURL(blob)
+  frameSrc.value = frameObjectUrl
+}
+
+function eventsWebSocketUrl(apiBase: string, wsPath: string): string {
+  const u = new URL(apiBase)
+  u.protocol = u.protocol === 'https:' ? 'wss:' : 'ws:'
+  u.pathname = wsPath
+  u.search = ''
+  u.hash = ''
+  return u.toString()
+}
+
+useWebSocket(eventsWebSocketUrl(config.public.apiBase as string, '/video/stream-ws'), {
+  onMessage: (_ws, event) => {
+    const data = event.data
+    if (typeof Blob !== 'undefined' && data instanceof Blob) {
+      setFrameFromBlob(data)
+    } else if (data instanceof ArrayBuffer) {
+      setFrameFromBlob(new Blob([data], { type: 'image/jpeg' }))
+    }
+  },
+  onError: (_ws, evt) => {
+    console.error('[vision] error', evt)
+  },
+  autoReconnect: true,
 })
 
-/** Bumps when the access token changes so the image refetches. */
-const mjpegKey = computed(() => `${userStore.accessToken ?? ''}`)
-
-watch(mjpegSrc, () => {
-  streamError.value = false
+onBeforeUnmount(() => {
+  if (frameObjectUrl) {
+    URL.revokeObjectURL(frameObjectUrl)
+  }
 })
 </script>

@@ -40,9 +40,7 @@ class Settings(BaseSettings):
     zmq_sub_string: str = "tcp://127.0.0.1:5557"
     zmq_pub_string: str = "tcp://127.0.0.1:5556"
 
-    # SUB connects here; vision process binds the corresponding PUB sockets (trusted local IPC/TCP).
-    vision_zmq_raw: str = "tcp://127.0.0.1:5560"
-    vision_zmq_annotated: str = "tcp://127.0.0.1:5561"
+    vision_zmq_annotated: str = "tcp://127.0.0.1:5560"
 
     ptz_username: str = "admin"
     ptz_password: str = "useruser1"
