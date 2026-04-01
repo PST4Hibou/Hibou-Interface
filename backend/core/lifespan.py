@@ -20,9 +20,7 @@ async def lifespan(app: FastAPI):
         await connection.run_sync(Base.metadata.create_all)
         await connection.run_sync(sqlite_add_missing_columns)
 
-    """
-    Start ZeroMQ sockets forwarder and vision video ingest (MJPEG sources).
-    """
+    """Start ZeroMQ IPC forwarder and annotated vision ingest (ZMQ → WebSocket)."""
     ipc_forwarder_task = asyncio.create_task(ZMQForwarder().forwarder())
     vision_forwarder_task = asyncio.create_task(ZMQVisionForwarder().forwarder())
 

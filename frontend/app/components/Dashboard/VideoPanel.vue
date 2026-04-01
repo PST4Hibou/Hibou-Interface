@@ -2,9 +2,38 @@
   <div
     class="relative flex h-full min-h-0 w-full flex-col overflow-hidden rounded-lg border border-border bg-black/80"
   >
+    <div
+      class="absolute right-2 top-2 z-10 flex gap-1 rounded-md border border-border/80 bg-background/90 p-0.5 shadow-sm backdrop-blur-sm"
+    >
+      <button
+        type="button"
+        class="rounded px-2 py-1 text-xs font-medium transition-colors"
+        :class="
+          activeChannel === VISION_CH_RAW
+            ? 'bg-primary text-primary-foreground'
+            : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+        "
+        @click="activeChannel = VISION_CH_RAW"
+      >
+        {{ $t('dashboard.videoChannelRaw') }}
+      </button>
+      <button
+        type="button"
+        class="rounded px-2 py-1 text-xs font-medium transition-colors"
+        :class="
+          activeChannel === VISION_CH_ANNOTATED
+            ? 'bg-primary text-primary-foreground'
+            : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+        "
+        @click="activeChannel = VISION_CH_ANNOTATED"
+      >
+        {{ $t('dashboard.videoChannelAnnotated') }}
+      </button>
+    </div>
     <img
-      v-show="frameSrc && !streamError"
-      :src="frameSrc ?? undefined"
+      v-show="displaySrc && !showVideoOverlay"
+      :key="displayKey"
+      :src="displaySrc ?? undefined"
       class="h-full w-full object-contain"
       alt=""
       referrerpolicy="no-referrer"
@@ -12,18 +41,21 @@
       @load="streamError = false"
     />
     <div
-      v-if="!frameSrc || streamError"
+      v-if="showVideoOverlay"
       class="absolute inset-0 flex flex-col items-center justify-center bg-muted/30 p-6 text-center"
     >
       <p class="text-sm font-medium text-foreground">
         {{ $t('dashboard.videoTitle') }}
       </p>
-      <p class="mt-1 max-w-sm text-sm text-muted-foreground">
-        <template v-if="!frameSrc">
+      <p class="mt-1 max-w-sm text-sm text-primary">
+        <template v-if="streamError">
+          {{ $t('dashboard.videoStreamFailed') }}
+        </template>
+        <template v-else-if="activeChannel === VISION_CH_RAW && !ptzMjpegUrl">
           {{ $t('dashboard.videoNeedToken') }}
         </template>
         <template v-else>
-          {{ $t('dashboard.videoStreamFailed') }}
+          {{ $t('dashboard.videoWaitingAnnotated') }}
         </template>
       </p>
     </div>
@@ -31,50 +63,14 @@
 </template>
 
 <script setup lang="ts">
-import { useWebSocket } from '@vueuse/core'
-
-const config = useRuntimeConfig()
-
-const frameSrc = ref<string | null>(null)
-const streamError = ref(false)
-let frameObjectUrl: string | null = null
-
-function setFrameFromBlob(blob: Blob) {
-  if (frameObjectUrl) {
-    URL.revokeObjectURL(frameObjectUrl)
-    frameObjectUrl = null
-  }
-  frameObjectUrl = URL.createObjectURL(blob)
-  frameSrc.value = frameObjectUrl
-}
-
-function eventsWebSocketUrl(apiBase: string, wsPath: string): string {
-  const u = new URL(apiBase)
-  u.protocol = u.protocol === 'https:' ? 'wss:' : 'ws:'
-  u.pathname = wsPath
-  u.search = ''
-  u.hash = ''
-  return u.toString()
-}
-
-useWebSocket(eventsWebSocketUrl(config.public.apiBase as string, '/video/stream-ws'), {
-  onMessage: (_ws, event) => {
-    const data = event.data
-    if (typeof Blob !== 'undefined' && data instanceof Blob) {
-      setFrameFromBlob(data)
-    } else if (data instanceof ArrayBuffer) {
-      setFrameFromBlob(new Blob([data], { type: 'image/jpeg' }))
-    }
-  },
-  onError: (_ws, evt) => {
-    console.error('[vision] error', evt)
-  },
-  autoReconnect: true,
-})
-
-onBeforeUnmount(() => {
-  if (frameObjectUrl) {
-    URL.revokeObjectURL(frameObjectUrl)
-  }
-})
+const {
+  VISION_CH_RAW,
+  VISION_CH_ANNOTATED,
+  activeChannel,
+  streamError,
+  ptzMjpegUrl,
+  displaySrc,
+  displayKey,
+  showVideoOverlay,
+} = useVisionVideoPanel()
 </script>

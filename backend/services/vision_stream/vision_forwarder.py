@@ -6,8 +6,6 @@ import zmq.asyncio
 from api.video import websocket_vision_manager
 from core.config import get_settings
 
-settings = get_settings()
-
 
 def frame_to_jpeg_bytes(frame) -> bytes:
     """Encode H×W×3 uint8 array as JPEG. OpenCV expects BGR; convert if your source is RGB."""
@@ -16,21 +14,25 @@ def frame_to_jpeg_bytes(frame) -> bytes:
         raise ValueError("cv2.imencode failed")
     return buf.tobytes()
 
+
 class ZMQVisionForwarder:
     def __init__(self):
+        settings = get_settings()
         self.context = zmq.asyncio.Context()
         self.socket_annotated = self.context.socket(zmq.SUB)
         self.socket_annotated.setsockopt(zmq.SUBSCRIBE, b"")
         self.socket_annotated.connect(settings.vision_zmq_annotated)
 
-    async def forwarder(self):
+    async def forward_annotated_zmq(self) -> None:
         while True:
             try:
                 frame = await self.socket_annotated.recv_pyobj()
-                print(f"[vision] received raw frame: {frame.shape}")
                 jpeg = frame_to_jpeg_bytes(frame)
                 await websocket_vision_manager.broadcast(jpeg)
             except asyncio.CancelledError:
                 break
             except Exception as e:
-                print(f"[vision] error: {e}")
+                print(f"[vision] annotated ZMQ error: {e}")
+
+    async def forwarder(self) -> None:
+        await self.forward_annotated_zmq()

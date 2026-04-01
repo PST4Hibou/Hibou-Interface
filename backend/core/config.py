@@ -1,5 +1,6 @@
 from functools import lru_cache
 from typing import Annotated, Any
+from urllib.parse import quote
 
 from pydantic import BeforeValidator, Field, field_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
@@ -47,6 +48,24 @@ class Settings(BaseSettings):
     ptz_host: str = "192.168.250.30"
     ptz_video_channel: int = 1
     ptz_rtsp_port: int = 554
+    #: Passed to ffmpeg -rtsp_transport. "udp" often yields lower latency on LAN than "tcp".
+    ptz_rtsp_transport: str = "tcp"
+
+    @property
+    def ptz_rtsp_url(self) -> str:
+        user = quote(self.ptz_username, safe="")
+        password = quote(self.ptz_password, safe="")
+        ch = self.ptz_video_channel
+        return (
+            f"rtsp://{user}:{password}@{self.ptz_host}:{self.ptz_rtsp_port}"
+            f"/Streaming/Channels/10{ch}/"
+        )
+
+    @field_validator("ptz_rtsp_transport", mode="before")
+    @classmethod
+    def normalize_ptz_rtsp_transport(cls, v: object) -> str:
+        raw = str(v or "tcp").lower()
+        return raw if raw in ("tcp", "udp") else "tcp"
 
     @field_validator("cookie_secure", mode="before")
     @classmethod

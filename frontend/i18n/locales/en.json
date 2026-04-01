@@ -68,7 +68,10 @@
     "videoTitle": "Video feed",
     "videoPlaceholder": "No stream connected.",
     "videoNeedToken": "Sign in to view the camera stream.",
-    "videoStreamFailed": "Could not load the stream. Ensure the vision publisher is running and VISION_ZMQ_RAW / VISION_ZMQ_ANNOTATED match its PUB addresses.",
+    "videoChannelRaw": "Raw",
+    "videoChannelAnnotated": "Annotated",
+    "videoWaitingAnnotated": "Waiting for the annotated stream (ZMQ). Ensure the vision pipeline publishes to VISION_ZMQ_ANNOTATED.",
+    "videoStreamFailed": "Could not load the stream. For raw, check ffmpeg and GET /video/ptz-mjpeg; for annotated, check the WebSocket and ZMQ.",
     "mapMissingToken": "Set NUXT_PUBLIC_MAPBOX_ACCESS_TOKEN to show the map."
   },
   "sidebar": {

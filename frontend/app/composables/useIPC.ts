@@ -1,43 +1,46 @@
-import { useWebSocket} from '@vueuse/core'
-
-function eventsWebSocketUrl(apiBase: string, wsPath: string): string {
-  const u = new URL(apiBase)
-  u.protocol = u.protocol === 'https:' ? 'wss:' : 'ws:'
-  u.pathname = wsPath
-  u.search = ''
-  u.hash = ''
-  return u.toString()
-}
+import { createSharedComposable, useWebSocket } from '@vueuse/core'
+import { eventsWebSocketUrl } from '~/utils/websocket'
 
 const EVENTS_WS_PATH = '/events/ws'
 
 type Subscriber = [(event: Event) => void, string]
-const subscribers = ref<Subscriber[]>([])
-let wsInstance: ReturnType<typeof useWebSocket> | null = null
 
-export function useIPC() {
+const useSharedIPC = createSharedComposable(() => {
   const config = useRuntimeConfig()
+  const userStore = useUserStore()
+  const subscribers = ref<Subscriber[]>([])
+
+  const url = computed(() => {
+    const base = config.public.apiBase as string
+    const token = userStore.accessToken
+    if (!base?.trim() || !token) return ''
+    return eventsWebSocketUrl(base, EVENTS_WS_PATH, token)
+  })
+
+  const ws = useWebSocket(url, {
+    autoReconnect: {
+      retries: Infinity,
+      delay: 3000,
+    },
+    onConnected: () => console.log('connected'),
+    onError: (ws, event) => console.error('WebSocket error', event),
+    onMessage: (_ws, event) => {
+      subscribers.value.forEach((subscriber: Subscriber) => {
+        const [callback, filter] = subscriber
+        if (event.data.startsWith(filter)) {
+          callback(event)
+        }
+      })
+    },
+  })
 
   const addSubscriber = (callback: (event: Event) => void, filter: string = '') => {
     subscribers.value.push([callback, filter])
   }
 
-  if (!wsInstance) {
-    wsInstance = useWebSocket(eventsWebSocketUrl(config.public.apiBase as string, EVENTS_WS_PATH), {
-      autoReconnect: true,
-      onConnected: () => console.log('connected'),
-      onDisconnected: () => wsInstance = null,
-      onError: (ws, event) => console.error('WebSocket error', event),
-      onMessage: (ws, event) => {
-        subscribers.value.forEach((subscriber: Subscriber) => {
-          const [callback, filter] = subscriber
-          if (event.data.startsWith(filter)) {
-            callback(event)
-          }
-        })
-      },
-    })
-  }
+  return { ...ws, addSubscriber }
+})
 
-  return { ...wsInstance, addSubscriber }
+export function useIPC() {
+  return useSharedIPC()
 }

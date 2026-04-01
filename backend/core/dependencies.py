@@ -1,10 +1,19 @@
 from collections.abc import AsyncGenerator
 from typing import Annotated
 
-from fastapi import Depends, HTTPException, Query, Request, status
+from fastapi import (
+    Depends,
+    HTTPException,
+    Query,
+    Request,
+    WebSocket,
+    WebSocketException,
+    status,
+)
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from starlette.requests import HTTPConnection
 
 from models import User
 from services.auth import decode_access_token
@@ -21,8 +30,8 @@ bearer_scheme = HTTPBearer(
 )
 
 
-async def get_db(request: Request) -> AsyncGenerator[AsyncSession, None]:
-    session_factory = getattr(request.app.state, "session_factory", None)
+async def get_db(conn: HTTPConnection) -> AsyncGenerator[AsyncSession, None]:
+    session_factory = getattr(conn.app.state, "session_factory", None)
     if session_factory is None:
         raise RuntimeError("Session factory is not available on app state")
 
@@ -94,3 +103,38 @@ async def get_current_user_media(
     if token is not None and token.strip():
         return await _user_from_access_token(db, token)
     raise credentials_error
+
+
+async def get_current_user_websocket(
+    websocket: WebSocket,
+    db: AsyncSession = Depends(get_db),
+    token: Annotated[
+        str | None,
+        Query(
+            description=(
+                "Access token for the WebSocket handshake "
+                "(browser APIs cannot set Authorization on WebSocket)."
+            ),
+        ),
+    ] = None,
+) -> User:
+    ws_auth_error = WebSocketException(
+        code=status.WS_1008_POLICY_VIOLATION,
+        reason="Could not validate credentials",
+    )
+    raw: str | None = None
+    if token is not None and token.strip():
+        raw = token.strip()
+    else:
+        auth_header = websocket.headers.get("authorization")
+        if auth_header and auth_header.strip():
+            access = auth_header.strip()
+            if access.lower().startswith("bearer "):
+                access = access[7:].strip()
+            raw = access
+    if not raw:
+        raise ws_auth_error
+    try:
+        return await _user_from_access_token(db, raw)
+    except HTTPException:
+        raise ws_auth_error from None
