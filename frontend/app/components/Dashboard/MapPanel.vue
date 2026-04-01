@@ -65,13 +65,12 @@ const refreshMap = () => {
 
 const { addSubscriber } = useIPC()
 addSubscriber((event) => {
-  let data = event.data.split(' ')[1]
+  const data = event.data.split(' ')[1]
   if (!data) return
 
-  let [azimuth, elevation] = data.split(',')
-  azimuth = parseFloat(azimuth) / 10
-  // elevation = parseFloat(elevation) / 10
+  const [azimuthRaw = ''] = data.split(',')
+  const azimuth = parseFloat(azimuthRaw) / 10
+  if (Number.isNaN(azimuth)) return
   angle.value = azimuth
 }, 'vision_angle')
-console.log()
 </script>
