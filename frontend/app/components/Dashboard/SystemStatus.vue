@@ -62,6 +62,7 @@
 
 <script setup lang="ts">
 import { ExternalLink } from 'lucide-vue-next'
+import type { IPCEvent } from '~/types/ipc'
 
 const ACTIVE_RESET_MS = 3000
 
@@ -170,8 +171,8 @@ function applySystemStatusPayload(payload: string) {
   }
 }
 
-const isDemo = 4
-const acousticDetections = ref<number[]>([1, 1, 0, 0])
+const isDemo = false
+const acousticDetections = ref<number[]>([])
 const acousticDetectionsDemo = computed(() => {
   if (isDemo) return [0, 0, 0, 0]
   return acousticDetections.value
@@ -179,17 +180,17 @@ const acousticDetectionsDemo = computed(() => {
 
 const { addSubscriber } = useIPC()
 
-addSubscriber((event) => {
+addSubscriber((event: IPCEvent) => {
   const parts = event.data.split(' ')
   const payload = parts.slice(1).join(' ')
   if (!payload) return
   applySystemStatusPayload(payload)
 }, 'system_status')
 
-addSubscriber((event) => {
+addSubscriber((event: IPCEvent) => {
   const detections = event.data.split(',').map(Number)
   acousticDetections.value = detections
-}, 'acoustic_detections')
+}, 'acoustic_detection')
 
 onUnmounted(() => {
   for (const t of statusResetTimers.values()) clearTimeout(t)
